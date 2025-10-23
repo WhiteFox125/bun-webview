@@ -86,15 +86,8 @@ webview.html = "<html><body><h1 id='title'>Hello</h1></body></html>";
 
 // Change title and get the new value
 webview
-  .eval(
-    `
-  document.getElementById('title').textContent = 'Hello from Bun!';
-  return document.getElementById('title').textContent;
-`
-  )
-  .then((result) => {
-    console.log("New title:", result); // "Hello from Bun!"
-  });
+  .eval(`return document.getElementById('title').textContent = 'Hello from Bun!'`)
+  .then((result) => console.log("New title:", result)); // "Hello from Bun!"
 ```
 
 ### Handling Window Events
