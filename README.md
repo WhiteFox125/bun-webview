@@ -152,4 +152,5 @@ This project is built upon the excellent work of:
 ---
 
 > **Note**: This is a community project and is not affiliated with the Bun and WebView projects or its maintainers.
+
 > bun-webview © 2025 - Created with ❤️ by WhiteFox125
