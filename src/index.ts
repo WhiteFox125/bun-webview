@@ -42,15 +42,6 @@ class WebView extends EventEmitter<NativeWebViewEvents> {
   constructor() {
     super();
 
-    this.bindings.set("__evalReply", (requestId: string, error: any, result: any) => {
-      const callback = this.pendingEvals.get(requestId);
-      if (!callback) return;
-      this.pendingEvals.delete(requestId);
-
-      if (error) callback(Object.assign(new Error(error.message), error));
-      else callback(null, result);
-    });
-
     this.native
       .on("create", () => {
         instances.add(this);
@@ -71,6 +62,13 @@ class WebView extends EventEmitter<NativeWebViewEvents> {
   create(debug: boolean = false): this {
     if (this.native.handle !== null) return this;
     this.native.create(debug);
+
+    this.bindings.set("__evalReply", (requestId: string, error: any, result: any) => {
+      const callback = this.pendingEvals.get(requestId);
+      if (!callback) return;
+      if (error) callback(Object.assign(new Error(error.message), error));
+      else callback(null, result);
+    });
 
     this.native.bind("__call", async (seq, req) => {
       const [methodName, ...methodArgs] = JSON.parse(req);
@@ -116,6 +114,15 @@ class WebView extends EventEmitter<NativeWebViewEvents> {
 
       cb?.(success, result);
     });
+
+    const callFunction = `
+      window.call = (...args) =>
+        new Promise((resolve, reject) =>
+          __call(...args).then(([error, result]) => (error ? reject(error) : resolve(result)))
+        );
+    `;
+    this.native.eval(callFunction);
+    this.native.init(callFunction);
 
     this.native.runNonBlocking();
     return this;

@@ -36,7 +36,7 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     this.emit("create");
   }
 
-  destroy(): void {
+  destroy(emit: boolean = true): void {
     if (this.handle === null) return;
     for (const [cbName, cb] of this.callbacks.entries()) {
       this.unbind(cbName);
@@ -45,6 +45,7 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     this.callbacks.clear();
     lib.symbols.webview_terminate(this.handle);
     lib.symbols.webview_destroy(this.handle);
+    if (emit) this.emit("destroy");
     this.handle = null;
   }
 
@@ -130,8 +131,6 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
 
   return(seq: string, status: number, result: string): void {
     if (this.handle === null) throw new Error("WebView handle is null");
-    if (typeof seq !== "string" || typeof status !== "number" || typeof result !== "string")
-      throw new Error("Invalid argument types");
     lib.symbols.webview_return(
       this.handle,
       lib.encodeCString(seq),
