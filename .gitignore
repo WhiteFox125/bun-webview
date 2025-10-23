@@ -1,3 +1,6 @@
+bun.lock
+build
+
 # dependencies (bun install)
 node_modules
 

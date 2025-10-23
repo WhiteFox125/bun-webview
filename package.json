@@ -2,6 +2,10 @@
   "name": "bun-webview",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "clean": "bun exec \"rm -rf webview/build\""
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"
