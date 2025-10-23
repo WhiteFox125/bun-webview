@@ -15,7 +15,7 @@ export const enum HINT {
   FIXED,
 }
 
-interface NativeWebViewEvents {
+export interface NativeWebViewEvents {
   create: [];
   closed: [];
   destroy: [];
@@ -32,13 +32,12 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
   create(debug: boolean = false, window: BunFFI.Pointer | null = null): void {
     if (this.handle !== null) return;
     this.handle = lib.symbols.webview_create(+debug, window);
-    if (this.handle === null) throw new Error("Failed to create native webview handle.");
+    if (this.handle === null) throw new Error("Failed to create native webview handle");
     this.emit("create");
   }
 
-  destroy(emit: boolean = true): void {
+  destroy(): void {
     if (this.handle === null) return;
-    if (emit) this.emit("destroy");
     for (const [cbName, cb] of this.callbacks.entries()) {
       this.unbind(cbName);
       cb.close();
@@ -50,6 +49,7 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
   }
 
   run() {
+    if (this.handle === null) throw new Error("WebView handle is null");
     lib.symbols.webview_run(this.handle);
     this.destroy();
   }
@@ -58,33 +58,48 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
 
   //dispatch;
 
-  get_window() {
+  get_window(): BunFFI.Pointer | null {
+    if (this.handle === null) throw new Error("WebView handle is null");
     return lib.symbols.webview_get_window(this.handle);
   }
 
   //get_native_handle;
 
   set_title(title: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof title !== "string") title = String(title);
     lib.symbols.webview_set_title(this.handle, lib.encodeCString(title));
   }
 
   set_size(size: Size): void {
-    lib.symbols.webview_set_size(this.handle, size.width, size.height, size.hint);
+    if (this.handle === null) throw new Error("WebView handle is null");
+    const { width, height, hint } = size;
+    if (typeof width !== "number" || typeof height !== "number" || typeof hint !== "number")
+      throw new Error("Invalid size parameters");
+    lib.symbols.webview_set_size(this.handle, width, height, hint);
   }
 
   navigate(url: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof url !== "string") throw new Error("URL is not a string");
     lib.symbols.webview_navigate(this.handle, lib.encodeCString(url));
   }
 
   set_html(html: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof html !== "string") throw new Error("HTML is not a string");
     lib.symbols.webview_set_html(this.handle, lib.encodeCString(html));
   }
 
   init(source: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof source !== "string") throw new Error("Source is not a string");
     lib.symbols.webview_init(this.handle, lib.encodeCString(source));
   }
 
   eval(source: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof source !== "string") throw new Error("Source is not a string");
     lib.symbols.webview_eval(this.handle, lib.encodeCString(source));
   }
 
@@ -92,7 +107,8 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     name: string,
     callback: (seq: string, req: string, arg: BunFFI.Pointer | null) => void,
     arg: BunFFI.Pointer | null = null
-  ) {
+  ): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
     const cb = new BunFFI.JSCallback(
       (seqPtr: BunFFI.Pointer, reqPtr: BunFFI.Pointer, arg: BunFFI.Pointer | null) => {
         const seq: any = seqPtr ? new BunFFI.CString(seqPtr) : "";
@@ -105,13 +121,17 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     lib.symbols.webview_bind(this.handle, lib.encodeCString(name), cb.ptr, arg);
   }
 
-  unbind(name: string) {
+  unbind(name: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
     lib.symbols.webview_unbind(this.handle, lib.encodeCString(name));
     this.callbacks.get(name)?.close();
     this.callbacks.delete(name);
   }
 
-  return(seq: string, status: number, result: string) {
+  return(seq: string, status: number, result: string): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
+    if (typeof seq !== "string" || typeof status !== "number" || typeof result !== "string")
+      throw new Error("Invalid argument types");
     lib.symbols.webview_return(
       this.handle,
       lib.encodeCString(seq),
@@ -121,17 +141,19 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
   }
 
   pump(block: boolean = false): boolean {
+    if (this.handle === null) throw new Error("WebView handle is null");
     return !!lib.symbols.webview_pump_msgloop(this.handle, +block);
   }
 
   runNonBlocking(): void {
+    if (this.handle === null) throw new Error("WebView handle is null");
     const step = () => {
       if (this.handle) {
         if (this.pump(false)) {
           setImmediate(step);
         } else {
           this.emit("closed");
-          this.destroy(false);
+          this.destroy();
         }
       }
     };

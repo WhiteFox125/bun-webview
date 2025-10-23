@@ -1,10 +1,12 @@
 {
   "name": "bun-webview",
   "module": "src/index.ts",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "build": "bun scripts/build.ts",
-    "clean": "bun exec \"rm -rf webview/build\""
+    "clean": "bun exec \"rm -rf webview/build\"",
+    "postinstall": "bun run build"
   },
   "private": true,
   "devDependencies": {
