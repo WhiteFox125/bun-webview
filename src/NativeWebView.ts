@@ -36,7 +36,7 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     this.emit("create");
   }
 
-  destroy(emit: boolean = true): void {
+  destroy(): void {
     if (this.handle === null) return;
     for (const [cbName, cb] of this.callbacks.entries()) {
       this.unbind(cbName);
@@ -45,7 +45,7 @@ export default class NativeWebView extends EventEmitter<NativeWebViewEvents> {
     this.callbacks.clear();
     lib.symbols.webview_terminate(this.handle);
     lib.symbols.webview_destroy(this.handle);
-    if (emit) this.emit("destroy");
+    this.emit("destroy");
     this.handle = null;
   }
 
